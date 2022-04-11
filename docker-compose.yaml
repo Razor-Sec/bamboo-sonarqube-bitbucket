@@ -1,0 +1,104 @@
+version: "3.3"
+services:
+  postgres_bamboo:
+    container_name: postgre_bamboo
+    image: postgres
+    ports:
+      - 15432:5432
+    networks:
+      bamboo_net:
+        ipv4_address: 192.168.99.11
+
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: bamboo
+
+  postgres_sonar:
+    container_name: postgre_sonar
+    image: postgres
+    ports:
+      - 25432:5432
+    networks:
+      bamboo_net:
+        ipv4_address: 192.168.99.12
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+
+  postgres_bitbucket:
+    container_name: postgre_bitbucket
+    image: postgres
+    ports:
+      - 35432:5432
+    networks:
+      bamboo_net:
+        ipv4_address: 192.168.99.13
+
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: bitbucket
+
+  bamboo_server:
+    container_name: bamboo_server
+    image: atlassian/bamboo
+    ports:
+      - 8085:8085
+      - 54663:54663
+    networks:
+      bamboo_net:
+        ipv4_address: 192.168.99.21
+    volumes:
+      - bambooVolume:/var/atlassian/application-data/bamboo
+
+  sonarqube:
+    container_name: sonarqube_server
+    image: sonarqube
+    ports:
+      - 9000:9000
+    networks:
+      bamboo_net:
+        ipv4_address: 192.168.99.22
+    environment:
+      SONARQUBE_JDBC_USERNAME: sonar
+      SONARQUBE_JDBC_PASSWORD: sonar
+      SONARQUBE_JDBC_URL: "jdbc:postgresql://postgres_sonar:5432/sonar"
+
+  bamboo_agent:
+    image: atlassian/bamboo-agent-base
+    container_name: bamboo_agent
+    networks:
+      bamboo_net:
+        ipv4_address: 192.168.99.23
+    environment:
+      BAMBOO_SERVER: "http://192.168.99.21:8085/agentServer"
+      
+  bitbucket_server:
+    container_name: bitbucket_server
+    image: atlassian/bitbucket
+    ports:
+      - 7990:7990
+      - 7999:7999
+    environment:
+      SEARCH_ENABLED: "false"
+      JDBC_DRIVER: "org.postgresql.Driver"
+      JDBC_USER: admin
+      JDBC_PASSWORD: admin
+      JDBC_URL: "jdbc:postgresql://192.168.99.13:5432/bitbucket"
+    networks:
+      bamboo_net:
+        ipv4_address: 192.168.99.24
+    volumes:
+      - bitbucketVolume:/var/atlassian/application-data/bitbucket
+
+volumes:
+  bambooVolume:
+  bitbucketVolume:
+networks:
+  bamboo_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "192.168.99.0/24"
