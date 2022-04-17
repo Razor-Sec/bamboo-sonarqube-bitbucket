@@ -42,7 +42,7 @@ services:
 
   bamboo_server:
     container_name: bamboo_server
-    image: atlassian/bamboo
+    image: atlassian/bamboo:8.1.5-ubuntu
     ports:
       - 8085:8085
       - 54663:54663
